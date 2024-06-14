@@ -1,0 +1,77 @@
+variable "ResourceGroupLocation" {
+  type = string
+}
+
+variable "vmNamePrefix" {
+  type = string
+}
+
+variable "sqlNamePrefix" {
+  type = string
+}
+
+variable "lbBEPoolTemplateFilePath" {
+  type = string
+  default = "path/to/your/lbBEPoolTemplate.json"
+}
+
+variable "vmResourceTags" {
+  type = map(string)
+}
+
+variable "vmCount" {
+  type = number
+}
+
+variable "nicVnetUri" {
+  type = string
+}
+
+variable "existingSubnetName" {
+  type = string
+}
+
+variable "lbBEAddressPoolID" {
+  type = string
+}
+
+resource "azurerm_resource_group" "example" {
+  name     = "example-resources"
+  location = var.ResourceGroupLocation
+}
+
+resource "azurerm_template_deployment" "lbBEpool" {
+  name                = "${var.vmNamePrefix}lbbepool"
+  resource_group_name = azurerm_resource_group.example.name
+  deployment_mode     = "Incremental"
+
+  template_body = file(var.lbBEPoolTemplateFilePath)
+
+  parameters = {
+    ResourceGroupLocation = {
+      value = var.ResourceGroupLocation
+    }
+    NamePrefix = {
+      value = var.vmNamePrefix
+    }
+    vmResourceTags = {
+      value = var.vmResourceTags
+    }
+    vmCount = {
+      value = var.vmCount
+    }
+    nicVnetUri = {
+      value = var.nicVnetUri
+    }
+    existingSubnetName = {
+      value = var.existingSubnetName
+    }
+    lbBEAddressPoolID = {
+      value = var.lbBEAddressPoolID
+    }
+  }
+
+  depends_on = [
+    azurerm_virtual_machine_extension.sqlConfig
+  ]
+}
