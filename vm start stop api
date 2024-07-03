@@ -206,6 +206,80 @@ This example queries the logs from the specified VM and prints the results.
 Make sure to replace placeholder values with actual values and configure the necessary permissions for your Azure AD application.
 
 
+To retrieve the activity log of a virtual machine (VM) in Azure, you can use the Azure Monitor REST API. The activity log provides a history of subscription-level events from Azure Resource Manager, including when resources are created or modified.
 
+Here is how you can retrieve the activity log using Python and the `requests` library:
+
+### Step 1: Set Up the Environment
+
+Ensure you have the `requests` library installed:
+
+```bash
+pip install requests
+```
+
+### Step 2: Define the API Call
+
+Use the Azure Monitor REST API to get the activity logs. The endpoint for this is:
+
+```
+GET https://management.azure.com/subscriptions/{subscription-id}/providers/Microsoft.Insights/eventtypes/management/values?api-version=2021-05-01
+```
+
+You can filter the logs based on various parameters like resource group, resource ID, event timestamp, etc.
+
+### Step 3: Implement the API Call in Python
+
+Here is an example of how to make the API call and process the response:
+
+```python
+import requests
+from datetime import datetime, timedelta
+
+subscription_id = "your-subscription-id"
+resource_group_name = "your-resource-group-name"
+vm_name = "your-vm-name"
+access_token = "your-access-token"
+
+# Define the time range for the activity logs (e.g., last 7 days)
+end_time = datetime.utcnow()
+start_time = end_time - timedelta(days=7)
+
+url = f"https://management.azure.com/subscriptions/{subscription_id}/providers/Microsoft.Insights/eventtypes/management/values"
+
+params = {
+    "api-version": "2021-05-01",
+    "$filter": f"eventTimestamp ge '{start_time.isoformat()}Z' and eventTimestamp le '{end_time.isoformat()}Z' and resourceGroupName eq '{resource_group_name}' and resourceId eq '/subscriptions/{subscription_id}/resourceGroups/{resource_group_name}/providers/Microsoft.Compute/virtualMachines/{vm_name}'"
+}
+
+headers = {
+    "Authorization": f"Bearer {access_token}",
+    "Content-Type": "application/json"
+}
+
+response = requests.get(url, headers=headers, params=params)
+
+if response.status_code == 200:
+    activity_logs = response.json().get("value", [])
+    for log in activity_logs:
+        print(log)
+else:
+    print(f"Failed to retrieve activity logs. Status code: {response.status_code}")
+    print(f"Response: {response.text}")
+```
+
+### Explanation:
+
+1. **Set the URL and Parameters**: The URL points to the Azure Monitor API for activity logs. The `params` dictionary includes the `api-version` and the `$filter` query to specify the time range and resource details.
+
+2. **Set Headers**: Include the `Authorization` header with the Bearer token and `Content-Type`.
+
+3. **Send the GET Request**: Use `requests.get` to send the request to the Azure Monitor API.
+
+4. **Handle the Response**: If the request is successful (status code 200), the activity logs are printed. Otherwise, the error status code and response are printed.
+
+Replace the placeholder values (`your-subscription-id`, `your-resource-group-name`, `your-vm-name`, `your-access-token`) with your actual Azure subscription ID, resource group name, virtual machine name, and access token.
+
+This script retrieves the activity logs for the specified VM in the given time range and prints the logs. Adjust the time range and other parameters as needed based on your requirements.
 
 
