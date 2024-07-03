@@ -282,4 +282,127 @@ Replace the placeholder values (`your-subscription-id`, `your-resource-group-nam
 
 This script retrieves the activity logs for the specified VM in the given time range and prints the logs. Adjust the time range and other parameters as needed based on your requirements.
 
+A 400 Bad Request response typically indicates that there's an issue with the syntax or parameters of your request. Here are a few common issues and their solutions:
 
+1. **Incorrect API Version**: Ensure you are using the correct API version.
+2. **Invalid Filter Syntax**: The `$filter` query might have syntax issues.
+3. **Missing or Incorrect Parameters**: Make sure all required parameters are included and correctly formatted.
+
+Let's break down the request and ensure everything is correct:
+
+### Updated Example
+
+```python
+import requests
+from datetime import datetime, timedelta
+
+# Replace these values with your actual subscription details
+subscription_id = "your-subscription-id"
+resource_group_name = "your-resource-group-name"
+vm_name = "your-vm-name"
+access_token = "your-access-token"
+
+# Define the time range for the activity logs (e.g., last 7 days)
+end_time = datetime.utcnow()
+start_time = end_time - timedelta(days=7)
+
+# Construct the resource ID for the VM
+resource_id = f"/subscriptions/{subscription_id}/resourceGroups/{resource_group_name}/providers/Microsoft.Compute/virtualMachines/{vm_name}"
+
+# API endpoint
+url = f"https://management.azure.com/subscriptions/{subscription_id}/providers/Microsoft.Insights/eventtypes/management/values"
+
+# Parameters
+params = {
+    "api-version": "2021-05-01",
+    "$filter": f"eventTimestamp ge '{start_time.isoformat()}Z' and eventTimestamp le '{end_time.isoformat()}Z' and resourceId eq '{resource_id}'"
+}
+
+# Headers
+headers = {
+    "Authorization": f"Bearer {access_token}",
+    "Content-Type": "application/json"
+}
+
+# Send the request
+response = requests.get(url, headers=headers, params=params)
+
+# Handle the response
+if response.status_code == 200:
+    activity_logs = response.json().get("value", [])
+    for log in activity_logs:
+        print(log)
+else:
+    print(f"Failed to retrieve activity logs. Status code: {response.status_code}")
+    print(f"Response: {response.text}")
+```
+
+### Key Points to Check:
+
+1. **API Version**: Make sure the `api-version` parameter matches a valid API version for Azure Monitor.
+2. **Resource ID Format**: The `resourceId` parameter in the filter should be in the correct format.
+3. **Date-Time Format**: Ensure the date-time values are correctly formatted in ISO 8601 format with a `Z` suffix to indicate UTC time.
+4. **URL and Query Parameters**: Ensure the endpoint URL and query parameters are correctly constructed.
+
+### Step-by-Step Debugging:
+
+1. **Check API Version**: Validate the `api-version` against Azure documentation.
+2. **Simplify Filter**: Start with a simple filter and gradually add more conditions to isolate the issue. For example:
+   ```python
+   params = {
+       "api-version": "2021-05-01",
+       "$filter": f"eventTimestamp ge '{start_time.isoformat()}Z' and eventTimestamp le '{end_time.isoformat()}Z'"
+   }
+   ```
+3. **Print URL and Params**: Before sending the request, print the URL and parameters to verify:
+   ```python
+   print(f"URL: {url}")
+   print(f"Params: {params}")
+   ```
+
+### Example with Simplified Filter:
+
+```python
+import requests
+from datetime import datetime, timedelta
+
+subscription_id = "your-subscription-id"
+access_token = "your-access-token"
+
+# Define the time range for the activity logs (e.g., last 7 days)
+end_time = datetime.utcnow()
+start_time = end_time - timedelta(days=7)
+
+# API endpoint
+url = f"https://management.azure.com/subscriptions/{subscription_id}/providers/Microsoft.Insights/eventtypes/management/values"
+
+# Parameters
+params = {
+    "api-version": "2021-05-01",
+    "$filter": f"eventTimestamp ge '{start_time.isoformat()}Z' and eventTimestamp le '{end_time.isoformat()}Z'"
+}
+
+# Headers
+headers = {
+    "Authorization": f"Bearer {access_token}",
+    "Content-Type": "application/json"
+}
+
+# Print URL and Params for Debugging
+print(f"URL: {url}")
+print(f"Params: {params}")
+
+# Send the request
+response = requests.get(url, headers=headers, params=params)
+
+# Handle the response
+if response.status_code == 200:
+    activity_logs = response.json().get("value", [])
+    for log in activity_logs:
+        print(log)
+else:
+    print(f"Failed to retrieve activity logs. Status code: {response.status_code}")
+    print(f"Response: {response.text}")
+```
+
+If the simplified filter works, gradually add the additional conditions back to isolate any issues.
