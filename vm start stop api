@@ -57,6 +57,67 @@ This code snippet will help you get
 
 ........................
 
+
+ails retrieved: Client ID: {client_id}, Tenant ID: {tenant_id}", status_code=200)
+
+Here's how you can retrieve SPN credentials from Azure Key Vault and use them in an Azure Function written in Python:
+
+### 1. **Set Up Your Environment**
+
+1. **Install Azure Functions Core Tools**:
+   ```sh
+   npm install -g azure-functions-core-tools@4 --unsafe-perm true
+   ```
+
+2. **Install Azure SDKs**:
+   ```sh
+   pip install azure-functions azure-identity azure-keyvault-secrets
+   ```
+
+### 2. **Azure Function Code**
+
+Create an HTTP trigger Azure Function and include the necessary code to retrieve SPN credentials from Azure Key Vault.
+
+**Function App Structure**:
+```
+MyFunctionApp/
+  | - HttpTrigger1/
+      | - __init__.py
+      | - function.json
+  | - host.json
+  | - requirements.txt
+```
+
+**`requirements.txt`**:
+```txt
+azure-functions
+azure-identity
+azure-keyvault-secrets
+```
+
+**`function.json`**:
+```json
+{
+    "bindings": [
+        {
+            "authLevel": "function",
+            "type": "httpTrigger",
+            "direction": "in",
+            "name": "req",
+            "methods": [ "get", "post" ],
+            "route": null
+        },
+        {
+            "type": "http",
+            "direction": "out",
+            "name": "res"
+        }
+    ]
+}
+```
+
+**`__init__.py`**:
+```python
 import logging
 import os
 import azure.functions as func
@@ -94,3 +155,45 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
     # credential = ClientSecretCredential(tenant_id, client_id, client_secret)
 
     return func.HttpResponse(f"SPN details retrieved: Client ID: {client_id}, Tenant ID: {tenant_id}", status_code=200)
+```
+
+### 3. **Environment Configuration**
+
+Make sure your Function App has access to the Key Vault. This involves:
+
+1. **Assigning Managed Identity to the Function App**:
+   - Go to your Function App in the Azure portal.
+   - Navigate to "Identity" under "Settings."
+   - Enable "System-assigned" managed identity and save.
+
+2. **Granting Key Vault Access**:
+   - Go to your Key Vault in the Azure portal.
+   - Navigate to "Access policies."
+   - Click on "Add Access Policy."
+   - Assign necessary permissions (Get, List) to the Function App's managed identity.
+   - Click "Add" and "Save."
+
+3. **Setting Environment Variables**:
+   In the Azure portal, go to your Function App, navigate to "Configuration," and add a new application setting:
+   - Name: `KEY_VAULT_NAME`
+   - Value: `<YourKeyVaultName>`
+
+### 4. **Deploy and Test**
+
+1. **Run Locally**:
+   ```sh
+   func start
+   ```
+
+2. **Deploy to Azure**:
+   ```sh
+   func azure functionapp publish <YourFunctionAppName>
+   ```
+
+3. **Test the Function**:
+   Use tools like Postman or Curl to test the function endpoint:
+   ```
+   https://<YourFunctionAppName>.azurewebsites.net/api/HttpTrigger1
+   ```
+
+By following these steps, you can securely retrieve and use SPN credentials stored in Azure Key Vault to authenticate your Azure Function App written in Python.
