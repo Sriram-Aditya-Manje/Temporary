@@ -52,4 +52,45 @@ for sub in subscriptions:
 
 6. **Optional - Use the token to interact with Azure services**: You can use the token to authenticate and interact with Azure services. In the example, the `SubscriptionClient` class is used to list subscriptions.
 
-This code snippet will help you get an access token for a Service Principal in Azure and use it to interact with Azure services.
+This code snippet will help you get
+ an access token for a Service Principal in Azure and use it to interact with Azure services.
+
+........................
+
+import logging
+import os
+import azure.functions as func
+from azure.identity import DefaultAzureCredential
+from azure.keyvault.secrets import SecretClient
+
+async def get_spn_details():
+    key_vault_name = os.environ["KEY_VAULT_NAME"]
+    key_vault_uri = f"https://{key_vault_name}.vault.azure.net"
+
+    credential = DefaultAzureCredential()
+    client = SecretClient(vault_url=key_vault_uri, credential=credential)
+
+    client_id = client.get_secret("SPNClientId").value
+    client_secret = client.get_secret("SPNClientSecret").value
+    tenant_id = client.get_secret("SPNTenantId").value
+
+    return {
+        "ClientId": client_id,
+        "ClientSecret": client_secret,
+        "TenantId": tenant_id
+    }
+
+async def main(req: func.HttpRequest) -> func.HttpResponse:
+    logging.info('Python HTTP trigger function processed a request.')
+
+    spn_details = await get_spn_details()
+
+    client_id = spn_details["ClientId"]
+    client_secret = spn_details["ClientSecret"]
+    tenant_id = spn_details["TenantId"]
+
+    # Use the client_id, client_secret, and tenant_id for authentication
+    # Example: Use these details to authenticate against Azure services
+    # credential = ClientSecretCredential(tenant_id, client_id, client_secret)
+
+    return func.HttpResponse(f"SPN details retrieved: Client ID: {client_id}, Tenant ID: {tenant_id}", status_code=200)
